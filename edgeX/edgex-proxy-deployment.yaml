@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: edgex-proxy
+  name: edgex-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: edgex-proxy
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.22.0 (955b78124)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/edgex-network: "true"
+        io.kompose.service: edgex-proxy
+    spec:
+      containers:
+        - command:
+            - /bin/sh
+            - -c
+            - until /consul/scripts/consul-svc-healthy.sh kong; do sleep 1; done; until /consul/scripts/consul-svc-healthy.sh security-secretstore-setup; do sleep 1; done; /edgex/security-proxy-setup --init=true
+          env:
+            - name: CLIENTS_COMMAND_HOST
+              value: edgex-core-command
+            - name: CLIENTS_COREDATA_HOST
+              value: edgex-core-data
+            - name: CLIENTS_DATA_HOST
+              value: edgex-core-data
+            - name: CLIENTS_METADATA_HOST
+              value: edgex-core-metadata
+            - name: CLIENTS_NOTIFICATIONS_HOST
+              value: edgex-support-notifications
+            - name: CLIENTS_RULESENGINE_HOST
+              value: edgex-kuiper
+            - name: CLIENTS_SCHEDULER_HOST
+              value: edgex-support-scheduler
+            - name: CLIENTS_VIRTUALDEVICE_HOST
+              value: edgex-device-virtual
+            - name: DATABASES_PRIMARY_HOST
+              value: edgex-redis
+            - name: EDGEX_SECURITY_SECRET_STORE
+              value: "true"
+            - name: KONGURL_SERVER
+              value: kong
+            - name: REGISTRY_HOST
+              value: edgex-core-consul
+            - name: SECRETSERVICE_CACERTPATH
+              value: /tmp/edgex/secrets/ca/ca.pem
+            - name: SECRETSERVICE_SERVER
+              value: edgex-vault
+            - name: SECRETSERVICE_SNIS
+              value: edgex-kong
+            - name: SECRETSERVICE_TOKENPATH
+              value: /tmp/edgex/secrets/edgex-security-proxy-setup/secrets-token.json
+            - name: SECRETSTORE_HOST
+              value: edgex-vault
+            - name: SECRETSTORE_ROOTCACERTPATH
+              value: /tmp/edgex/secrets/ca/ca.pem
+            - name: SECRETSTORE_SERVERNAME
+              value: edgex-vault
+          image: edgexfoundry/docker-security-proxy-setup-go:1.3.0
+          name: edgex-proxy
+          resources: {}
+          volumeMounts:
+            - mountPath: /consul/scripts
+              name: consul-scripts
+              readOnly: true
+            - mountPath: /tmp/edgex/secrets/ca
+              name: edgex-proxy-claim1
+              readOnly: true
+            - mountPath: /tmp/edgex/secrets/edgex-security-proxy-setup
+              name: edgex-proxy-claim2
+              readOnly: true
+      hostname: edgex-proxy
+      restartPolicy: Always
+      volumes:
+        - name: consul-scripts
+          persistentVolumeClaim:
+            claimName: consul-scripts
+            readOnly: true
+        - name: edgex-proxy-claim1
+          persistentVolumeClaim:
+            claimName: edgex-proxy-claim1
+            readOnly: true
+        - name: edgex-proxy-claim2
+          persistentVolumeClaim:
+            claimName: edgex-proxy-claim2
+            readOnly: true
+status: {}

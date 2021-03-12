@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: rulesengine
+  name: rulesengine
+spec:
+  ports:
+    - name: "20498"
+      port: 20498
+      targetPort: 20498
+    - name: "48075"
+      port: 48075
+      targetPort: 48075
+  selector:
+    io.kompose.service: rulesengine
+status:
+  loadBalancer: {}

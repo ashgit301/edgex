@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: metadata
+  name: metadata
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: metadata
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.22.0 (955b78124)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/edgex-network: "true"
+        io.kompose.service: metadata
+    spec:
+      containers:
+        - env:
+            - name: CLIENTS_COMMAND_HOST
+              value: edgex-core-command
+            - name: CLIENTS_COREDATA_HOST
+              value: edgex-core-data
+            - name: CLIENTS_DATA_HOST
+              value: edgex-core-data
+            - name: CLIENTS_METADATA_HOST
+              value: edgex-core-metadata
+            - name: CLIENTS_NOTIFICATIONS_HOST
+              value: edgex-support-notifications
+            - name: CLIENTS_RULESENGINE_HOST
+              value: edgex-kuiper
+            - name: CLIENTS_SCHEDULER_HOST
+              value: edgex-support-scheduler
+            - name: CLIENTS_VIRTUALDEVICE_HOST
+              value: edgex-device-virtual
+            - name: DATABASES_PRIMARY_HOST
+              value: edgex-redis
+            - name: EDGEX_SECURITY_SECRET_STORE
+              value: "true"
+            - name: NOTIFICATIONS_SENDER
+              value: edgex-core-metadata
+            - name: REGISTRY_HOST
+              value: edgex-core-consul
+            - name: SECRETSTORE_HOST
+              value: edgex-vault
+            - name: SECRETSTORE_ROOTCACERTPATH
+              value: /tmp/edgex/secrets/ca/ca.pem
+            - name: SECRETSTORE_SERVERNAME
+              value: edgex-vault
+            - name: SECRETSTORE_TOKENFILE
+              value: /tmp/edgex/secrets/edgex-core-metadata/secrets-token.json
+            - name: SERVICE_HOST
+              value: edgex-core-metadata
+          image: edgexfoundry/docker-core-metadata-go:1.3.0
+          name: edgex-core-metadata
+          ports:
+            - containerPort: 48081
+          resources: {}
+          volumeMounts:
+            - mountPath: /tmp/edgex/secrets/ca
+              name: metadata-claim0
+              readOnly: true
+            - mountPath: /tmp/edgex/secrets/edgex-core-metadata
+              name: metadata-claim1
+              readOnly: true
+      hostname: edgex-core-metadata
+      restartPolicy: Always
+      volumes:
+        - name: metadata-claim0
+          persistentVolumeClaim:
+            claimName: metadata-claim0
+            readOnly: true
+        - name: metadata-claim1
+          persistentVolumeClaim:
+            claimName: metadata-claim1
+            readOnly: true
+status: {}
